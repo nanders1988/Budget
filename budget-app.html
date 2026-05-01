@@ -1,0 +1,837 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover" />
+<meta name="apple-mobile-web-app-capable" content="yes" />
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+<meta name="apple-mobile-web-app-title" content="Budget" />
+<meta name="theme-color" content="#0b0b0d" />
+<title>Budget</title>
+<link rel="apple-touch-icon" href="data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 180 180'><rect width='180' height='180' rx='40' fill='%230b0b0d'/><text x='90' y='118' font-size='100' text-anchor='middle' font-family='-apple-system,system-ui' fill='%2330d158'>$</text></svg>" />
+<style>
+  :root {
+    --bg: #0b0b0d;
+    --bg-elev: #16171b;
+    --bg-elev-2: #1f2027;
+    --text: #f4f4f6;
+    --text-dim: #9b9ba3;
+    --text-faint: #5a5a62;
+    --accent: #30d158;
+    --accent-dim: #1f6e3a;
+    --warn: #ff9f0a;
+    --bad: #ff453a;
+    --border: #26272d;
+    --safe-top: env(safe-area-inset-top, 0px);
+    --safe-bottom: env(safe-area-inset-bottom, 0px);
+  }
+  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  html, body {
+    margin: 0; padding: 0;
+    background: var(--bg);
+    color: var(--text);
+    font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", system-ui, sans-serif;
+    font-size: 16px;
+    -webkit-font-smoothing: antialiased;
+    overscroll-behavior-y: contain;
+  }
+  body {
+    padding-top: var(--safe-top);
+    padding-bottom: calc(var(--safe-bottom) + 92px);
+    min-height: 100vh;
+  }
+  button, input, select, textarea {
+    font-family: inherit;
+    font-size: inherit;
+    color: inherit;
+  }
+  button { cursor: pointer; border: none; background: none; }
+
+  /* ---- Header ---- */
+  header {
+    padding: 16px 20px 8px;
+  }
+  .greet {
+    color: var(--text-dim);
+    font-size: 14px;
+    margin: 0 0 4px;
+  }
+  .month-name {
+    font-size: 28px;
+    font-weight: 700;
+    margin: 0;
+    letter-spacing: -0.5px;
+  }
+  .summary-card {
+    margin: 16px 20px 0;
+    background: var(--bg-elev);
+    border: 1px solid var(--border);
+    border-radius: 18px;
+    padding: 18px 20px;
+  }
+  .summary-row {
+    display: flex; justify-content: space-between; align-items: baseline;
+  }
+  .summary-label { color: var(--text-dim); font-size: 13px; }
+  .summary-amount {
+    font-size: 36px; font-weight: 700; letter-spacing: -1px;
+    margin: 4px 0 8px;
+  }
+  .summary-budget { color: var(--text-dim); font-size: 13px; }
+  .progress-track {
+    margin-top: 14px;
+    height: 6px; background: var(--bg-elev-2); border-radius: 3px; overflow: hidden;
+  }
+  .progress-fill {
+    height: 100%; background: var(--accent); border-radius: 3px;
+    transition: width .3s ease;
+  }
+  .progress-fill.warn { background: var(--warn); }
+  .progress-fill.bad { background: var(--bad); }
+
+  /* ---- Section title ---- */
+  .section-title {
+    margin: 28px 20px 10px;
+    color: var(--text-dim);
+    font-size: 13px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.6px;
+    display: flex; justify-content: space-between; align-items: center;
+  }
+  .section-title button {
+    color: var(--accent);
+    text-transform: none;
+    letter-spacing: 0;
+    font-size: 13px;
+    font-weight: 500;
+    padding: 4px 0;
+  }
+
+  /* ---- Category bars ---- */
+  .cat-list {
+    margin: 0 20px;
+    background: var(--bg-elev);
+    border: 1px solid var(--border);
+    border-radius: 18px;
+    overflow: hidden;
+  }
+  .cat-row {
+    padding: 12px 16px;
+    border-bottom: 1px solid var(--border);
+  }
+  .cat-row:last-child { border-bottom: none; }
+  .cat-line {
+    display: flex; justify-content: space-between; align-items: baseline;
+    margin-bottom: 8px;
+  }
+  .cat-name { font-size: 15px; }
+  .cat-amounts { font-size: 13px; color: var(--text-dim); }
+  .cat-amounts .spent { color: var(--text); font-weight: 500; }
+  .cat-bar {
+    height: 4px; background: var(--bg-elev-2); border-radius: 2px; overflow: hidden;
+  }
+  .cat-bar-fill {
+    height: 100%; background: var(--accent); border-radius: 2px;
+    transition: width .3s ease;
+  }
+  .cat-bar-fill.warn { background: var(--warn); }
+  .cat-bar-fill.bad { background: var(--bad); }
+
+  /* ---- Transactions ---- */
+  .tx-list {
+    margin: 0 20px;
+    background: var(--bg-elev);
+    border: 1px solid var(--border);
+    border-radius: 18px;
+    overflow: hidden;
+  }
+  .tx-empty {
+    padding: 28px 20px; text-align: center; color: var(--text-faint); font-size: 14px;
+  }
+  .tx-row {
+    padding: 14px 16px;
+    border-bottom: 1px solid var(--border);
+    display: flex; justify-content: space-between; align-items: center;
+    gap: 12px;
+  }
+  .tx-row:last-child { border-bottom: none; }
+  .tx-row:active { background: var(--bg-elev-2); }
+  .tx-left { min-width: 0; flex: 1; }
+  .tx-cat {
+    font-size: 15px; font-weight: 500;
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  }
+  .tx-meta {
+    font-size: 12px; color: var(--text-dim); margin-top: 2px;
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  }
+  .tx-amount {
+    font-variant-numeric: tabular-nums;
+    font-weight: 600;
+    font-size: 16px;
+    flex-shrink: 0;
+  }
+  .tx-pending-dot {
+    display: inline-block; width: 6px; height: 6px; border-radius: 50%;
+    background: var(--warn); margin-right: 6px; vertical-align: middle;
+  }
+
+  /* ---- Bottom bar ---- */
+  .bottom-bar {
+    position: fixed; left: 0; right: 0; bottom: 0;
+    padding: 12px 20px calc(12px + var(--safe-bottom));
+    background: linear-gradient(to top, var(--bg) 70%, rgba(11,11,13,0));
+    display: flex; gap: 10px;
+    z-index: 50;
+  }
+  .add-btn {
+    flex: 1;
+    background: var(--accent);
+    color: #06180e;
+    font-weight: 700;
+    font-size: 17px;
+    padding: 16px;
+    border-radius: 16px;
+    box-shadow: 0 4px 14px rgba(48,209,88,0.35);
+  }
+  .add-btn:active { transform: scale(0.98); }
+  .icon-btn {
+    width: 52px;
+    background: var(--bg-elev);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    color: var(--text);
+    font-size: 20px;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .icon-btn:active { background: var(--bg-elev-2); }
+
+  /* ---- Modal ---- */
+  .modal-backdrop {
+    position: fixed; inset: 0; background: rgba(0,0,0,0.5);
+    display: none; z-index: 100;
+    backdrop-filter: blur(4px); -webkit-backdrop-filter: blur(4px);
+  }
+  .modal-backdrop.open { display: block; }
+  .modal {
+    position: fixed; left: 0; right: 0; bottom: 0;
+    background: var(--bg-elev);
+    border-radius: 24px 24px 0 0;
+    padding: 8px 20px calc(20px + var(--safe-bottom));
+    transform: translateY(100%);
+    transition: transform .3s cubic-bezier(.32,.72,0,1);
+    z-index: 101;
+    max-height: 92vh;
+    overflow-y: auto;
+  }
+  .modal.open { transform: translateY(0); }
+  .modal-handle {
+    width: 36px; height: 4px; background: var(--text-faint);
+    border-radius: 2px; margin: 8px auto 14px; opacity: 0.6;
+  }
+  .modal-title {
+    font-size: 18px; font-weight: 700;
+    margin: 0 0 16px;
+    text-align: center;
+  }
+  .field {
+    margin-bottom: 14px;
+  }
+  .field label {
+    display: block;
+    color: var(--text-dim);
+    font-size: 13px;
+    margin-bottom: 6px;
+    font-weight: 500;
+  }
+  .field input, .field select, .field textarea {
+    width: 100%;
+    background: var(--bg-elev-2);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 13px 14px;
+    color: var(--text);
+    outline: none;
+    -webkit-appearance: none;
+    appearance: none;
+  }
+  .field input:focus, .field select:focus, .field textarea:focus {
+    border-color: var(--accent);
+  }
+  .field-amount input {
+    font-size: 28px;
+    font-weight: 700;
+    text-align: center;
+    padding: 18px 14px;
+    letter-spacing: -0.5px;
+  }
+  .field select {
+    background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'><path d='M1 1l5 5 5-5' stroke='%239b9ba3' stroke-width='1.5' fill='none' stroke-linecap='round'/></svg>");
+    background-repeat: no-repeat;
+    background-position: right 14px center;
+    padding-right: 36px;
+  }
+  .field textarea { resize: none; min-height: 60px; }
+  .row-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  .modal-actions {
+    display: flex; gap: 10px; margin-top: 18px;
+  }
+  .btn-primary {
+    flex: 1;
+    background: var(--accent);
+    color: #06180e;
+    font-weight: 700;
+    padding: 15px;
+    border-radius: 14px;
+    font-size: 16px;
+  }
+  .btn-primary:disabled { opacity: 0.4; }
+  .btn-secondary {
+    flex: 1;
+    background: var(--bg-elev-2);
+    color: var(--text);
+    padding: 15px;
+    border-radius: 14px;
+    font-size: 16px;
+  }
+  .btn-danger {
+    background: transparent;
+    color: var(--bad);
+    padding: 15px;
+    border-radius: 14px;
+    font-size: 16px;
+    width: 100%;
+    margin-top: 6px;
+  }
+
+  /* ---- Settings panel rows ---- */
+  .settings-row {
+    padding: 14px 16px;
+    border-bottom: 1px solid var(--border);
+    display: flex; justify-content: space-between; align-items: center;
+    gap: 12px;
+  }
+  .settings-row:last-child { border-bottom: none; }
+  .settings-row .label { font-size: 15px; }
+  .settings-row .value { color: var(--text-dim); font-size: 13px; }
+  .settings-card {
+    margin: 0 20px 14px;
+    background: var(--bg-elev);
+    border: 1px solid var(--border);
+    border-radius: 18px;
+    overflow: hidden;
+  }
+  .settings-action {
+    width: 100%; text-align: left;
+  }
+  .settings-action:active { background: var(--bg-elev-2); }
+
+  .toast {
+    position: fixed; left: 50%; top: calc(var(--safe-top) + 20px);
+    transform: translate(-50%, -120%);
+    background: var(--bg-elev-2);
+    border: 1px solid var(--border);
+    color: var(--text);
+    padding: 10px 16px;
+    border-radius: 12px;
+    font-size: 14px;
+    z-index: 200;
+    transition: transform .25s ease;
+    box-shadow: 0 8px 24px rgba(0,0,0,0.4);
+    max-width: 80vw;
+  }
+  .toast.show { transform: translate(-50%, 0); }
+  .footer-note {
+    text-align: center; color: var(--text-faint); font-size: 12px;
+    margin: 24px 20px 8px;
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <p class="greet" id="greet">Hi Nick</p>
+  <h1 class="month-name" id="monthName">April 2026</h1>
+</header>
+
+<div class="summary-card">
+  <div class="summary-row">
+    <span class="summary-label">Spent this month</span>
+    <span class="summary-budget" id="summaryBudgetTxt">of $1,310</span>
+  </div>
+  <div class="summary-amount" id="summaryAmount">$0.00</div>
+  <div class="progress-track"><div class="progress-fill" id="summaryBar" style="width:0%"></div></div>
+</div>
+
+<div class="section-title"><span>Categories</span></div>
+<div class="cat-list" id="catList"></div>
+
+<div class="section-title">
+  <span>Recent</span>
+  <button id="exportBtn">Export CSV</button>
+</div>
+<div class="tx-list" id="txList">
+  <div class="tx-empty">No expenses yet. Tap Add to log one.</div>
+</div>
+
+<div class="footer-note">Phase 1 prototype — entries save on this device. Phase 2 will sync to your Excel workbook.</div>
+
+<div class="bottom-bar">
+  <button class="add-btn" id="openAdd">＋ Add expense</button>
+  <button class="icon-btn" id="openSettings" aria-label="Settings">⚙︎</button>
+</div>
+
+<!-- Add modal -->
+<div class="modal-backdrop" id="addBackdrop"></div>
+<div class="modal" id="addModal" role="dialog" aria-label="Add expense">
+  <div class="modal-handle"></div>
+  <h2 class="modal-title" id="addTitle">New expense</h2>
+
+  <div class="field field-amount">
+    <input type="text" inputmode="decimal" id="amount" placeholder="$0.00" autocomplete="off" />
+  </div>
+
+  <div class="field">
+    <label for="category">Category</label>
+    <select id="category"></select>
+  </div>
+
+  <div class="field">
+    <label for="subcategory">Subcategory</label>
+    <select id="subcategory"></select>
+  </div>
+
+  <div class="field">
+    <label for="date">Date</label>
+    <input type="date" id="date" />
+  </div>
+
+  <div class="field">
+    <label for="notes">Notes (optional)</label>
+    <textarea id="notes" placeholder="e.g. Whole Foods run"></textarea>
+  </div>
+
+  <div class="modal-actions">
+    <button class="btn-secondary" id="cancelAdd">Cancel</button>
+    <button class="btn-primary" id="saveAdd">Save</button>
+  </div>
+  <button class="btn-danger" id="deleteAdd" style="display:none">Delete expense</button>
+</div>
+
+<!-- Settings modal -->
+<div class="modal-backdrop" id="settingsBackdrop"></div>
+<div class="modal" id="settingsModal" role="dialog" aria-label="Settings">
+  <div class="modal-handle"></div>
+  <h2 class="modal-title">Settings</h2>
+
+  <div class="settings-card">
+    <button class="settings-row settings-action" id="exportBtn2">
+      <span class="label">Export pending CSV</span>
+      <span class="value">→</span>
+    </button>
+    <button class="settings-row settings-action" id="markSyncedBtn">
+      <span class="label">Mark all as synced</span>
+      <span class="value">→</span>
+    </button>
+  </div>
+
+  <div class="settings-card">
+    <div class="settings-row"><span class="label">Total entries</span><span class="value" id="statTotal">0</span></div>
+    <div class="settings-row"><span class="label">Pending sync</span><span class="value" id="statPending">0</span></div>
+    <div class="settings-row"><span class="label">Storage</span><span class="value">This device</span></div>
+  </div>
+
+  <div class="settings-card">
+    <button class="settings-row settings-action" id="clearAllBtn">
+      <span class="label" style="color:var(--bad)">Clear all data</span>
+      <span class="value">→</span>
+    </button>
+  </div>
+
+  <div class="modal-actions">
+    <button class="btn-secondary" id="closeSettings" style="flex:1">Close</button>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+"use strict";
+
+// ---------------------------------------------------------------------------
+//  Categories (sourced directly from your Categories sheet)
+// ---------------------------------------------------------------------------
+const CATEGORIES = {
+  "Groceries": ["Groceries - Miscellaneous","Whole Foods","Target","Trader Joe's","Publix","ABC Store","Costco","BJ's"],
+  "Household/Personal Care": ["Household - Miscellaneous","Artwork","Kitchen","Candles","Cleaning Supplies","Paper Towels","Toilet Paper","CVS","Haircut","HH - Target"],
+  "Gas": ["Gas - Miscellaneous","Fuel"],
+  "Meals": ["Meals - Miscellaneous","Restaurant","Bar/Drinks","DoorDash","Breakfast","Ice Cream","Meals - Date Night"],
+  "Entertainment": ["Ent. - Miscellaneous","Concert","Vinyls","Ent. - Date Night","Movies","Sporting Event","Museum","Golf","Lyft/Uber"],
+  "Wardrobe": ["Wardrobe - Miscellaneous","Clothes","Shoes","Watches","Hats","Dry Cleaning"],
+  "Gifts": ["Gifts - Miscellaneous","Mom","Caroline","Kate","Billy","Dad","Christmas"],
+  "Funds": ["—"],
+  "Miscellaneous": ["Miscellaneous"]
+};
+
+// Monthly budgets from your Inputs sheet (Expenses block)
+const BUDGETS = {
+  "Groceries": 300,
+  "Household/Personal Care": 110,
+  "Gas": 75,
+  "Meals": 400,
+  "Entertainment": 200,
+  "Wardrobe": 150,
+  "Gifts": 75,
+  "Miscellaneous": 100.39
+};
+const TOTAL_BUDGET = Object.values(BUDGETS).reduce((s, n) => s + n, 0);
+
+const STORAGE_KEY = "budgetapp.v1";
+
+// ---------------------------------------------------------------------------
+//  State
+// ---------------------------------------------------------------------------
+let state = {
+  // Each entry: { id, date (YYYY-MM-DD), category, subcategory, amount (number), notes, synced (bool) }
+  entries: [],
+};
+let editingId = null;
+
+function load() {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if (raw) {
+      const parsed = JSON.parse(raw);
+      if (parsed && Array.isArray(parsed.entries)) state = parsed;
+    }
+  } catch (e) {
+    console.error("load failed", e);
+  }
+}
+function save() {
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+}
+
+// ---------------------------------------------------------------------------
+//  Helpers
+// ---------------------------------------------------------------------------
+function fmtMoney(n) {
+  return "$" + n.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+}
+function todayISO() {
+  const d = new Date();
+  d.setMinutes(d.getMinutes() - d.getTimezoneOffset());
+  return d.toISOString().slice(0, 10);
+}
+function monthKey(iso) { return iso.slice(0, 7); } // YYYY-MM
+function thisMonthKey() { return todayISO().slice(0, 7); }
+function fmtDateShort(iso) {
+  const [y, m, d] = iso.split("-").map(Number);
+  return new Date(y, m-1, d).toLocaleDateString("en-US", { month: "short", day: "numeric" });
+}
+function newId() {
+  return Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
+}
+function uid() { return newId(); }
+
+function progressClass(spent, budget) {
+  if (!budget) return "";
+  const pct = spent / budget;
+  if (pct >= 1) return "bad";
+  if (pct >= 0.85) return "warn";
+  return "";
+}
+
+// ---------------------------------------------------------------------------
+//  Rendering
+// ---------------------------------------------------------------------------
+function render() {
+  renderHeader();
+  renderSummary();
+  renderCategories();
+  renderTransactions();
+  renderStats();
+}
+
+function renderHeader() {
+  const now = new Date();
+  document.getElementById("monthName").textContent =
+    now.toLocaleDateString("en-US", { month: "long", year: "numeric" });
+}
+
+function entriesThisMonth() {
+  const m = thisMonthKey();
+  return state.entries.filter(e => monthKey(e.date) === m && e.category !== "Funds");
+}
+
+function renderSummary() {
+  const month = entriesThisMonth();
+  const spent = month.reduce((s, e) => s + e.amount, 0);
+  document.getElementById("summaryAmount").textContent = fmtMoney(spent);
+  document.getElementById("summaryBudgetTxt").textContent = "of " + fmtMoney(TOTAL_BUDGET);
+  const pct = Math.min(spent / TOTAL_BUDGET, 1.5);
+  const bar = document.getElementById("summaryBar");
+  bar.style.width = Math.min(pct * 100, 100) + "%";
+  bar.className = "progress-fill " + progressClass(spent, TOTAL_BUDGET);
+}
+
+function renderCategories() {
+  const list = document.getElementById("catList");
+  const month = entriesThisMonth();
+  const spentByCat = {};
+  for (const e of month) {
+    spentByCat[e.category] = (spentByCat[e.category] || 0) + e.amount;
+  }
+  const order = Object.keys(BUDGETS);
+  list.innerHTML = order.map(cat => {
+    const spent = spentByCat[cat] || 0;
+    const budget = BUDGETS[cat];
+    const pct = budget ? Math.min(spent / budget, 1) * 100 : 0;
+    const cls = progressClass(spent, budget);
+    return `
+      <div class="cat-row">
+        <div class="cat-line">
+          <span class="cat-name">${cat}</span>
+          <span class="cat-amounts"><span class="spent">${fmtMoney(spent)}</span> / ${fmtMoney(budget)}</span>
+        </div>
+        <div class="cat-bar"><div class="cat-bar-fill ${cls}" style="width:${pct}%"></div></div>
+      </div>
+    `;
+  }).join("");
+}
+
+function renderTransactions() {
+  const list = document.getElementById("txList");
+  if (!state.entries.length) {
+    list.innerHTML = `<div class="tx-empty">No expenses yet. Tap Add to log one.</div>`;
+    return;
+  }
+  const sorted = [...state.entries].sort((a, b) => {
+    if (a.date !== b.date) return b.date.localeCompare(a.date);
+    return b.id.localeCompare(a.id);
+  }).slice(0, 30);
+
+  list.innerHTML = sorted.map(e => {
+    const dot = e.synced ? "" : `<span class="tx-pending-dot" title="not synced"></span>`;
+    const meta = [fmtDateShort(e.date), e.subcategory, e.notes].filter(Boolean).join(" · ");
+    return `
+      <button class="tx-row" data-id="${e.id}">
+        <div class="tx-left">
+          <div class="tx-cat">${dot}${escapeHtml(e.category)}</div>
+          <div class="tx-meta">${escapeHtml(meta)}</div>
+        </div>
+        <div class="tx-amount">${fmtMoney(e.amount)}</div>
+      </button>
+    `;
+  }).join("");
+
+  list.querySelectorAll(".tx-row").forEach(btn => {
+    btn.addEventListener("click", () => openEdit(btn.dataset.id));
+  });
+}
+
+function renderStats() {
+  document.getElementById("statTotal").textContent = state.entries.length;
+  document.getElementById("statPending").textContent = state.entries.filter(e => !e.synced).length;
+}
+
+function escapeHtml(s) {
+  return (s || "").toString()
+    .replace(/&/g,"&amp;").replace(/</g,"&lt;")
+    .replace(/>/g,"&gt;").replace(/"/g,"&quot;").replace(/'/g,"&#39;");
+}
+
+// ---------------------------------------------------------------------------
+//  Add / edit modal
+// ---------------------------------------------------------------------------
+function populateCategorySelect() {
+  const cat = document.getElementById("category");
+  cat.innerHTML = Object.keys(CATEGORIES).map(c => `<option>${c}</option>`).join("");
+}
+function populateSubcategorySelect(category) {
+  const sub = document.getElementById("subcategory");
+  const subs = CATEGORIES[category] || [];
+  sub.innerHTML = subs.map(s => `<option>${escapeHtml(s)}</option>`).join("");
+}
+
+function openAdd() {
+  editingId = null;
+  document.getElementById("addTitle").textContent = "New expense";
+  document.getElementById("amount").value = "";
+  document.getElementById("date").value = todayISO();
+  document.getElementById("notes").value = "";
+  document.getElementById("category").value = "Groceries";
+  populateSubcategorySelect("Groceries");
+  document.getElementById("subcategory").value = CATEGORIES["Groceries"][0];
+  document.getElementById("deleteAdd").style.display = "none";
+  showModal("add");
+  setTimeout(() => document.getElementById("amount").focus(), 250);
+}
+
+function openEdit(id) {
+  const e = state.entries.find(x => x.id === id);
+  if (!e) return;
+  editingId = id;
+  document.getElementById("addTitle").textContent = "Edit expense";
+  document.getElementById("amount").value = e.amount.toFixed(2);
+  document.getElementById("date").value = e.date;
+  document.getElementById("notes").value = e.notes || "";
+  document.getElementById("category").value = e.category;
+  populateSubcategorySelect(e.category);
+  document.getElementById("subcategory").value = e.subcategory;
+  document.getElementById("deleteAdd").style.display = "block";
+  showModal("add");
+}
+
+function saveEntry() {
+  const amountStr = document.getElementById("amount").value.replace(/[^0-9.\-]/g, "");
+  const amount = parseFloat(amountStr);
+  if (!amount || isNaN(amount)) { toast("Enter an amount"); return; }
+  const date = document.getElementById("date").value || todayISO();
+  const category = document.getElementById("category").value;
+  const subcategory = document.getElementById("subcategory").value;
+  const notes = document.getElementById("notes").value.trim();
+
+  if (editingId) {
+    const e = state.entries.find(x => x.id === editingId);
+    if (e) {
+      e.amount = amount; e.date = date; e.category = category;
+      e.subcategory = subcategory; e.notes = notes;
+      e.synced = false; // edited entries become pending again
+    }
+    toast("Saved");
+  } else {
+    state.entries.push({
+      id: uid(), date, category, subcategory, amount, notes, synced: false
+    });
+    toast("Expense added");
+  }
+  save();
+  hideModal("add");
+  render();
+}
+
+function deleteEntry() {
+  if (!editingId) return;
+  if (!confirm("Delete this expense?")) return;
+  state.entries = state.entries.filter(x => x.id !== editingId);
+  save();
+  hideModal("add");
+  render();
+  toast("Deleted");
+}
+
+// ---------------------------------------------------------------------------
+//  Modal helpers
+// ---------------------------------------------------------------------------
+function showModal(name) {
+  document.getElementById(name + "Backdrop").classList.add("open");
+  document.getElementById(name + "Modal").classList.add("open");
+  document.body.style.overflow = "hidden";
+}
+function hideModal(name) {
+  document.getElementById(name + "Backdrop").classList.remove("open");
+  document.getElementById(name + "Modal").classList.remove("open");
+  document.body.style.overflow = "";
+}
+
+// ---------------------------------------------------------------------------
+//  CSV export (paste-into-Excel stopgap)
+// ---------------------------------------------------------------------------
+function exportCSV(onlyPending) {
+  let rows = [...state.entries];
+  if (onlyPending) rows = rows.filter(e => !e.synced);
+  if (!rows.length) { toast(onlyPending ? "Nothing pending" : "No entries"); return; }
+  rows.sort((a, b) => a.date.localeCompare(b.date));
+
+  // Header matches Table1 exactly: Date, Category, Subcategory, Amount, Notes
+  const header = ["Date","Category","Subcategory","Amount","Notes"];
+  const csv = [header.join(",")].concat(
+    rows.map(e => [
+      csvCell(formatExcelDate(e.date)),
+      csvCell(e.category),
+      csvCell(e.subcategory),
+      e.amount.toFixed(2),
+      csvCell(e.notes || "")
+    ].join(","))
+  ).join("\r\n");
+
+  const blob = new Blob([csv], { type: "text/csv;charset=utf-8" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = `expenses-${todayISO()}.csv`;
+  document.body.appendChild(a); a.click();
+  setTimeout(() => { URL.revokeObjectURL(url); a.remove(); }, 100);
+  toast(`Exported ${rows.length} entries`);
+}
+function csvCell(s) {
+  if (s == null) return "";
+  s = String(s);
+  if (/[",\r\n]/.test(s)) return '"' + s.replace(/"/g, '""') + '"';
+  return s;
+}
+function formatExcelDate(iso) {
+  // Excel parses "M/D/YYYY" cleanly into a date when pasted.
+  const [y, m, d] = iso.split("-").map(Number);
+  return `${m}/${d}/${y}`;
+}
+
+// ---------------------------------------------------------------------------
+//  Toast
+// ---------------------------------------------------------------------------
+let toastTimer = null;
+function toast(msg) {
+  const t = document.getElementById("toast");
+  t.textContent = msg;
+  t.classList.add("show");
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => t.classList.remove("show"), 1800);
+}
+
+// ---------------------------------------------------------------------------
+//  Wire up
+// ---------------------------------------------------------------------------
+function init() {
+  load();
+  populateCategorySelect();
+
+  document.getElementById("openAdd").addEventListener("click", openAdd);
+  document.getElementById("openSettings").addEventListener("click", () => showModal("settings"));
+  document.getElementById("closeSettings").addEventListener("click", () => hideModal("settings"));
+
+  document.getElementById("category").addEventListener("change", (e) => {
+    populateSubcategorySelect(e.target.value);
+  });
+
+  document.getElementById("saveAdd").addEventListener("click", saveEntry);
+  document.getElementById("cancelAdd").addEventListener("click", () => hideModal("add"));
+  document.getElementById("deleteAdd").addEventListener("click", deleteEntry);
+  document.getElementById("addBackdrop").addEventListener("click", () => hideModal("add"));
+  document.getElementById("settingsBackdrop").addEventListener("click", () => hideModal("settings"));
+
+  document.getElementById("exportBtn").addEventListener("click", () => exportCSV(true));
+  document.getElementById("exportBtn2").addEventListener("click", () => { hideModal("settings"); exportCSV(true); });
+
+  document.getElementById("markSyncedBtn").addEventListener("click", () => {
+    state.entries.forEach(e => e.synced = true);
+    save(); render();
+    toast("Marked all as synced");
+  });
+
+  document.getElementById("clearAllBtn").addEventListener("click", () => {
+    if (!confirm("Delete ALL entries on this device? This cannot be undone.")) return;
+    state.entries = [];
+    save(); render();
+    hideModal("settings");
+    toast("Cleared");
+  });
+
+  render();
+}
+
+document.addEventListener("DOMContentLoaded", init);
+</script>
+</body>
+</html>
